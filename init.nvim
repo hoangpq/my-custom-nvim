@@ -32,6 +32,8 @@ let g:tokyodark_enable_italic_comment = 1
 let g:tokyodark_enable_italic = 1
 let g:tokyodark_color_gamma = "1.0"
 
+let g:zig_fmt_autosave = 0
+
 let g:jedi#environment_path = "/usr/local/bin/python3"
 
 highlight link VarId Identifier
@@ -52,6 +54,9 @@ set laststatus=0
 set modifiable
 
 call plug#begin('~/.vim/plugged')
+" Zig
+Plug 'ziglang/zig.vim'
+
 Plug 'tanvirtin/monokai.nvim'
 Plug 'davidhalter/jedi-vim'
 Plug 'neovimhaskell/haskell-vim'
@@ -74,6 +79,7 @@ Plug 'easymotion/vim-easymotion'
 
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'neovim/nvim-lspconfig'
+Plug 'nvim-lua/completion-nvim'
 
 " Vim Script
 Plug 'kyazdani42/nvim-web-devicons'
@@ -83,16 +89,9 @@ Plug 'folke/trouble.nvim'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'yegappan/mru'
 
-Plug 'tiagovla/tokyodark.nvim'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'} 
 
 call plug#end()
-
-" lua << EOF
-" require'lspconfig'.tsserver.setup{}
-" require'lspconfig'.erlangls.setup{}
-" require'lspconfig'.ghcide.setup{}
-" EOF
-
 
 " LSP config
 lua << EOF
@@ -133,7 +132,7 @@ end
 
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
-local servers = { 'tsserver', 'erlangls', 'rust_analyzer', 'ghcide' }
+local servers = { 'tsserver', 'erlangls', 'rust_analyzer', 'rls', 'ghcide', 'zls', 'gopls' }
 for _, lsp in ipairs(servers) do
   nvim_lsp[lsp].setup {
     on_attach = on_attach,
@@ -142,7 +141,20 @@ for _, lsp in ipairs(servers) do
     }
   }
 end
+
+require'nvim-treesitter.configs'.setup {
+  highlight = {
+    enable = true
+  },
+}
+
 EOF
+
+" Set completeopt to have a better completion experience
+set completeopt=menuone,noinsert,noselect
+
+" Enable completions as you type
+let g:completion_enable_auto_popup = 1
 
 "$NVIM_TUI_ENABLE_CURSOR_SHAPE = 1
 " insert mode - line
@@ -151,22 +163,6 @@ let &t_SI .= "\<Esc>[5 q"
 let &t_SR .= "\<Esc>[4 q"
 "common - block
 let &t_EI .= "\<Esc>[3 q"
-
-"Rust racer setting
-set hidden
-let g:racer_cmd="/Users/hoangpq/.cargo/bin/racer"
-let g:racer_experimental_completer = 1
-let $RUST_SRC_PATH="/Users/hoangpq/.rustup/toolchains/stable-x86_64-apple-darwin/lib/rustlib/src"
-
-augroup Racer
-    autocmd!
-    autocmd FileType rust nmap <buffer> gd         <Plug>(rust-def)
-    autocmd FileType rust nmap <buffer> gs         <Plug>(rust-def-split)
-    autocmd FileType rust nmap <buffer> gx         <Plug>(rust-def-vertical)
-    autocmd FileType rust nmap <buffer> gt         <Plug>(rust-def-tab)
-    autocmd FileType rust nmap <buffer> <leader>gd <Plug>(rust-doc)
-    autocmd FileType rust nmap <buffer> <leader>gD <Plug>(rust-doc-tab)
-augroup END
 
 " "Open NERDTree when nvim starts
 autocmd StdinReadPre * let s:std_in=1
@@ -400,3 +396,10 @@ tnoremap <C-v><Esc> <Esc>
 
 autocmd TermOpen * setlocal nospell
 autocmd TermOpen,BufEnter term://* startinsert
+
+" Tab switching
+tnoremap <C-w>h <C-\><C-n><C-w>h
+tnoremap <C-w>j <C-\><C-n><C-w>j
+tnoremap <C-w>k <C-\><C-n><C-w>k
+tnoremap <C-w>l <C-\><C-n><C-w>l
+
